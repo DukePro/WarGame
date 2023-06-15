@@ -44,19 +44,40 @@
 
     class Battlefield
     {
+        private Squad _country1;
+        private Squad _country2;
+
         public void PerformBattle()
         {
             Console.WriteLine("Введите название первой страны");
-            Squad _country1 = new Squad(Console.ReadLine());
+            _country1 = new Squad(Console.ReadLine());
             Console.WriteLine("Введите название второй страны");
-            Squad _country2 = new Squad(Console.ReadLine());
+            _country2 = new Squad(Console.ReadLine());
 
             while (_country1.IsAllDead == false && _country2.IsAllDead == false)
             {
+                DecideWin();
+                Console.Write($"Атакует страна {_country1.CountryName}____________________________________________________________________________________________");
                 _country2.TakeArmyDamage(_country1.GetAttackingSoldier());
-                Console.WriteLine("___________________________________________________________________________________________________________________________");
+                DecideWin();
+                Console.Write($"Атакует страна {_country2.CountryName}____________________________________________________________________________________________");
                 _country1.TakeArmyDamage(_country2.GetAttackingSoldier());
-                Console.WriteLine("___________________________________________________________________________________________________________________________");
+            }
+        }
+
+        private void DecideWin()
+        {
+            if (_country2.IsAllDead == true && _country1.IsAllDead == true)
+            {
+                Console.WriteLine($"Нет победителя! Все братушки полегли и с патронами напряжно...");
+            }
+            else if (_country2.IsAllDead == true)
+            {
+                Console.WriteLine($"Победа страны {_country2.CountryName}!");
+            }
+            else if (_country1.IsAllDead == true)
+            {
+                Console.WriteLine($"Победа страны {_country2.CountryName}!");
             }
         }
     }
@@ -64,7 +85,6 @@
     class Squad
     {
         private List<Soldier> _army;
-        private int _currentIndex = 0;
         private int _attackingSoldierIndex = -1;
         public string CountryName;
 
@@ -74,13 +94,24 @@
             _army = CreateArmy();
         }
 
-        public bool IsAllDead { get; private set; } = false;
+        public bool IsAllDead => _army.Count() == 0;
 
         private List<Soldier> CreateArmy()
         {
             List<Soldier> squad = new List<Soldier>();
+            int armySize = 2;
+
+            for (int i = 0; i < armySize; i++)
+            {
+                squad.Add(CreateRandomSoldier());
+            }
+
+            return squad;
+        }
+
+        private Soldier CreateRandomSoldier()
+        {
             Random random = new Random();
-            int armySize = 20;
 
             Soldier[] soldiers = new Soldier[]
             {
@@ -89,14 +120,7 @@
                 new MachineGunner(),
             };
 
-            for (int i = 0; i < armySize; i++)
-            {
-                Soldier soldier = soldiers[random.Next(0, soldiers.Length)];
-                soldier.Index = _currentIndex++;
-                squad.Add(soldier);
-            }
-
-            return squad;
+            return soldiers[random.Next(0, soldiers.Length)];
         }
 
         public Soldier GetAttackingSoldier()
@@ -113,7 +137,6 @@
                 }
 
                 Soldier soldier = _army[_attackingSoldierIndex];
-
                 return soldier;
             }
             else
@@ -126,27 +149,17 @@
         {
             if (soldier != null)
             {
-
                 for (int i = 0; i < soldier.TargetsAvailable; i++)
                 {
                     soldier.AttackTarget(_army);
                     RemoveDead();
-
-                    if (_army.Count() == 0)
-                    {
-                        IsAllDead = true;
-                    }
                 }
-            }
-            else
-            {
-                Console.WriteLine("Ошибка, аттакующие солдаты померли");
             }
         }
 
-        private void RemoveDead() //удаляет трупы из основного
+        private void RemoveDead()
         {
-            for (int i = 0; i < _army.Count; i++)
+            for (int i = _army.Count - 1; i >= 0; i--)
             {
                 if (_army[i].Health <= 0)
                 {
@@ -158,30 +171,32 @@
 
     class Soldier
     {
-        public int Index;
+        private static int _currentSoldierIndex = 0;
         protected int Armor;
         protected int HitDamage;
         protected int BaseDamage = 15;
         protected static Random Random = new Random();
 
-        public Soldier(int index = 0)
+        public Soldier()
         {
-            Index = index;
+            _currentSoldierIndex++;
+            Index = _currentSoldierIndex;
             Health = 500;
             Armor = 30;
             HitDamage = 100;
             TargetsAvailable = 1;
         }
 
+        public int Index { get; protected set; }
         public int Health { get; protected set; }
         public int TargetsAvailable { get; protected set; }
 
         public void AttackTarget(List<Soldier> enemySquad)
         {
-            if(enemySquad.Count > 0) 
+            if (enemySquad.Count > 0)
             {
                 int targetIndex = ChooseTarget(enemySquad);
-            
+
                 if (enemySquad[targetIndex].Health > 0)
                 {
                     enemySquad[targetIndex].TakeUnitDamage(CalculateDamage());
@@ -200,13 +215,21 @@
             if (alternateDamage != 0)
             {
                 int damage = alternateDamage;
-                Console.Write($"Солдат {Index} Пытается нанести {damage} урона ");
+                Console.Write($"Солдат {Index} Пытается нанести ");
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write($"{damage}");
+                Console.ResetColor();
+                Console.Write($" урона \n");
                 return damage;
             }
             else
             {
                 int damage = (int)(HitDamage * damageMod);
-                Console.Write($"Солдат {Index} Пытается нанести {damage} урона ");
+                Console.Write($"Солдат {Index} Пытается нанести ");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write($"{damage}");
+                Console.ResetColor();
+                Console.Write($" урона \n");
                 return damage;
             }
         }
@@ -225,11 +248,19 @@
             }
             if (Health > 0)
             {
-                Console.WriteLine($"Солдат {Index} получает {reducedDamage} урона, остаётся {Health} хп.");
+                Console.Write($"Солдат {Index} получает ");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write($" {reducedDamage} ");
+                Console.ResetColor();
+                Console.Write($" урона, остаётся {Health} хп.\n");
             }
             else
             {
-                Console.WriteLine($"Солдат {Index} получает {reducedDamage} урона и померает.");
+                Console.Write($"Солдат {Index} получает ");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write($" {reducedDamage} ");
+                Console.ResetColor();
+                Console.Write($" урона и померает.\n");
             }
         }
 
@@ -238,9 +269,9 @@
             return 0;
         }
 
-        private int ChooseTarget(List<Soldier> enemySquad) //случайный выбор цели
+        private int ChooseTarget(List<Soldier> enemySquad)
         {
-            int tempIndex = Random.Next(0, enemySquad.Count()); // получаем случайную ячейку массива
+            int tempIndex = Random.Next(0, enemySquad.Count());
             return tempIndex;
         }
     }
