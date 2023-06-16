@@ -1,4 +1,6 @@
-﻿namespace WarGame
+﻿using static System.Net.Mime.MediaTypeNames;
+
+namespace WarGame
 {
     class Programm
     {
@@ -54,38 +56,50 @@
             Console.WriteLine("Введите название второй страны");
             _country2 = new Squad(Console.ReadLine());
 
-            while (_country1.IsAllDead == false && _country2.IsAllDead == false)
+            while (DecideWin() == false) // исправить ложное срабатывание атаки уже проигравшей стороны
             {
-                DecideWin();
-                Console.Write($"Атакует страна {_country1.CountryName}____________________________________________________________________________________________");
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Write($"Атакует страна {_country1.CountryName} ============================================================================================\n");
+                Console.ResetColor();
                 _country2.TakeArmyDamage(_country1.GetAttackingSoldier());
-                DecideWin();
-                Console.Write($"Атакует страна {_country2.CountryName}____________________________________________________________________________________________");
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.Write($"Атакует страна {_country2.CountryName} ============================================================================================\n");
+                Console.ResetColor();
                 _country1.TakeArmyDamage(_country2.GetAttackingSoldier());
             }
         }
 
-        private void DecideWin()
+        private bool DecideWin()
         {
             if (_country2.IsAllDead == true && _country1.IsAllDead == true)
             {
                 Console.WriteLine($"Нет победителя! Все братушки полегли и с патронами напряжно...");
+                return true;
             }
             else if (_country2.IsAllDead == true)
             {
-                Console.WriteLine($"Победа страны {_country2.CountryName}!");
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"Победа страны {_country1.CountryName}!");
+                Console.ResetColor();
+                return true;
             }
             else if (_country1.IsAllDead == true)
             {
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine($"Победа страны {_country2.CountryName}!");
+                Console.ResetColor();
+                return true;
             }
+
+            return false;
         }
     }
 
     class Squad
     {
         private List<Soldier> _army;
-        private int _attackingSoldierIndex = -1;
+        private int _attackingSoldierCounter = -1;
         public string CountryName;
 
         public Squad(string countryName)
@@ -127,16 +141,16 @@
         {
             if (_army.Count != 0)
             {
-                if (_attackingSoldierIndex >= _army.Count() - 1)
+                if (_attackingSoldierCounter >= _army.Count() - 1)
                 {
-                    _attackingSoldierIndex = 0;
+                    _attackingSoldierCounter = 0;
                 }
                 else
                 {
-                    _attackingSoldierIndex++;
+                    _attackingSoldierCounter++;
                 }
 
-                Soldier soldier = _army[_attackingSoldierIndex];
+                Soldier soldier = _army[_attackingSoldierCounter];
                 return soldier;
             }
             else
