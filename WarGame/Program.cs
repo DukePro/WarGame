@@ -1,6 +1,4 @@
-﻿using static System.Net.Mime.MediaTypeNames;
-
-namespace WarGame
+﻿namespace WarGame
 {
     class Programm
     {
@@ -51,18 +49,15 @@ namespace WarGame
 
         public void PerformBattle()
         {
-            Console.WriteLine("Введите название первой страны");
-            _country1 = new Squad(Console.ReadLine());
-            Console.WriteLine("Введите название второй страны");
-            _country2 = new Squad(Console.ReadLine());
+            _country1 = new Squad();
+            _country2 = new Squad();
 
-            while (DecideWin() == false) // исправить ложное срабатывание атаки уже проигравшей стороны
+            while (DecideWin() == false)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.Write($"Атакует страна {_country1.CountryName} ============================================================================================\n");
                 Console.ResetColor();
                 _country2.TakeArmyDamage(_country1.GetAttackingSoldier());
-
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.Write($"Атакует страна {_country2.CountryName} ============================================================================================\n");
                 Console.ResetColor();
@@ -98,17 +93,18 @@ namespace WarGame
 
     class Squad
     {
-        private List<Soldier> _army;
+        private List<Soldier> _soldiers;
         private int _attackingSoldierCounter = -1;
-        public string CountryName;
 
-        public Squad(string countryName)
+        public Squad()
         {
-            CountryName = countryName;
-            _army = CreateArmy();
+            Console.WriteLine("Введите название страны");
+            CountryName = Console.ReadLine();
+            _soldiers = CreateArmy();
         }
 
-        public bool IsAllDead => _army.Count() == 0;
+        public string CountryName { get; private set; }
+        public bool IsAllDead => _soldiers.Count() == 0;
 
         private List<Soldier> CreateArmy()
         {
@@ -139,18 +135,11 @@ namespace WarGame
 
         public Soldier GetAttackingSoldier()
         {
-            if (_army.Count != 0)
+            if (_soldiers.Count != 0)
             {
-                if (_attackingSoldierCounter >= _army.Count() - 1)
-                {
-                    _attackingSoldierCounter = 0;
-                }
-                else
-                {
-                    _attackingSoldierCounter++;
-                }
+                _attackingSoldierCounter = (_attackingSoldierCounter + 1) % _soldiers.Count();
 
-                Soldier soldier = _army[_attackingSoldierCounter];
+                Soldier soldier = _soldiers[_attackingSoldierCounter];
                 return soldier;
             }
             else
@@ -165,7 +154,7 @@ namespace WarGame
             {
                 for (int i = 0; i < soldier.TargetsAvailable; i++)
                 {
-                    soldier.AttackTarget(_army);
+                    soldier.AttackTarget(_soldiers);
                     RemoveDead();
                 }
             }
@@ -173,11 +162,11 @@ namespace WarGame
 
         private void RemoveDead()
         {
-            for (int i = _army.Count - 1; i >= 0; i--)
+            for (int i = _soldiers.Count - 1; i >= 0; i--)
             {
-                if (_army[i].Health <= 0)
+                if (_soldiers[i].Health <= 0)
                 {
-                    _army.RemoveAt(i);
+                    _soldiers.RemoveAt(i);
                 }
             }
         }
@@ -221,7 +210,6 @@ namespace WarGame
         protected virtual int CalculateDamage()
         {
             int alternateDamage = UseAttackAbility();
-
             double minDamageMod = 0.8;
             double maxDamageMod = 1.2;
             double damageMod = minDamageMod + (Random.NextDouble() * (maxDamageMod - minDamageMod));
